@@ -1,0 +1,23 @@
+CREATE DATABASE IF NOT EXISTS leveragy
+  CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+USE leveragy;
+
+CREATE TABLE IF NOT EXISTS url_analysis (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  url VARCHAR(2048) NOT NULL,
+  risk_score INT,
+  ml_result TEXT,
+  multimodal_result TEXT,
+  xai_result TEXT,
+  final_result VARCHAR(32),
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS reports (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  url VARCHAR(2048) NOT NULL,
+  reason TEXT,
+  status VARCHAR(32) NOT NULL DEFAULT 'PENDING',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);

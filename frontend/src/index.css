@@ -1,0 +1,173 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: #f5f6fa;
+  color: #1a1a2e;
+}
+
+.app-header {
+  padding: 16px 24px;
+  background: #1a1a2e;
+}
+
+.brand {
+  color: #fff;
+  font-weight: 700;
+  font-size: 1.25rem;
+  text-decoration: none;
+}
+
+.page {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 48px 24px;
+}
+
+.subtitle {
+  color: #555;
+  margin-bottom: 24px;
+}
+
+.url-form {
+  display: flex;
+  gap: 8px;
+}
+
+.url-input {
+  flex: 1;
+  padding: 12px 16px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 1rem;
+}
+
+.btn {
+  padding: 12px 20px;
+  border-radius: 8px;
+  border: none;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.btn-primary {
+  background: #4361ee;
+  color: #fff;
+}
+
+.btn-danger {
+  background: #e63946;
+  color: #fff;
+}
+
+.btn-ghost {
+  background: transparent;
+  color: #555;
+  border: 1px solid #ccc;
+}
+
+.btn-outline {
+  background: #fff;
+  color: #4361ee;
+  border: 1px solid #4361ee;
+}
+
+.error-text {
+  color: #e63946;
+  margin-top: 12px;
+}
+
+.result-badge {
+  display: inline-block;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-weight: 700;
+  margin: 12px 0;
+}
+
+.result-phishing {
+  background: #ffe0e3;
+  color: #e63946;
+}
+
+.result-suspicious {
+  background: #fff3cd;
+  color: #a67c00;
+}
+
+.result-normal {
+  background: #d8f3dc;
+  color: #2d6a4f;
+}
+
+.risk-score {
+  display: flex;
+  justify-content: space-between;
+  padding: 16px;
+  background: #fff;
+  border-radius: 8px;
+  margin-bottom: 24px;
+}
+
+.xai-section ul {
+  padding-left: 20px;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+}
+
+.modal {
+  background: #fff;
+  border-radius: 12px;
+  padding: 32px;
+  max-width: 420px;
+  width: 90%;
+}
+
+.warning-url {
+  word-break: break-all;
+  font-family: monospace;
+  background: #f5f6fa;
+  padding: 8px;
+  border-radius: 6px;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 24px;
+}
+
+.report-form {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.report-form textarea {
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-family: inherit;
+}
+
+.report-form-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.report-success {
+  color: #2d6a4f;
+  font-weight: 600;
+}
