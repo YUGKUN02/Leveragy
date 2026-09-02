@@ -7,7 +7,11 @@ export default function App() {
     <div className="app">
       <header className="app-header">
         <Link to="/" className="brand">
-          Leveragy
+          <span className="mark">L</span>
+          <span className="brand-text">
+            <span className="name">Leveragy</span>
+            <span className="tag">금융 피싱 탐지 플랫폼</span>
+          </span>
         </Link>
       </header>
       <main>
