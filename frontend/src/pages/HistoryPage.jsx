@@ -59,8 +59,16 @@ export default function HistoryPage() {
                   </div>
                 </div>
                 <div className="history-meta">
-                  <span className={"verdict-badge tone-" + toneOf(item.finalResult)}>{item.finalResult}</span>
-                  <span className="history-score">{item.riskScore}/100</span>
+                  {item.processingStatus === "PROCESSING" ? (
+                    <span className="status-pill">분석 중</span>
+                  ) : item.processingStatus === "FAILED" ? (
+                    <span className="status-pill status-rejected">분석 실패</span>
+                  ) : (
+                    <>
+                      <span className={"verdict-badge tone-" + toneOf(item.finalResult)}>{item.finalResult}</span>
+                      <span className="history-score">{item.riskScore}/100</span>
+                    </>
+                  )}
                 </div>
               </Link>
             </li>

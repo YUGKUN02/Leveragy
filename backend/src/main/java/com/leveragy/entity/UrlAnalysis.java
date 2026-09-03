@@ -40,12 +40,23 @@ public class UrlAnalysis {
     @Column(name = "final_result", length = 32)
     private String finalResult;
 
+    /**
+     * 비동기 분석 Job 상태: PROCESSING → COMPLETED(또는 FAILED).
+     * 실제 Sandbox·AI 연동 시 응답에 몇 초가 걸릴 수 있으므로, 행을 먼저
+     * PROCESSING으로 생성해 즉시 id를 돌려주고 백그라운드에서 채운다.
+     */
+    @Column(name = "processing_status", length = 32)
+    private String processingStatus;
+
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
+        if (this.processingStatus == null) {
+            this.processingStatus = "PROCESSING";
+        }
     }
 
     public Long getId() { return id; }
@@ -71,6 +82,9 @@ public class UrlAnalysis {
 
     public String getFinalResult() { return finalResult; }
     public void setFinalResult(String finalResult) { this.finalResult = finalResult; }
+
+    public String getProcessingStatus() { return processingStatus; }
+    public void setProcessingStatus(String processingStatus) { this.processingStatus = processingStatus; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }

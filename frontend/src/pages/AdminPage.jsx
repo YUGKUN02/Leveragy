@@ -126,7 +126,12 @@ export default function AdminPage() {
                 {STATUS_LABEL[report.status] || report.status}
               </span>
             </div>
-            {report.reason && <p className="body-muted">{report.reason}</p>}
+            {report.reportCount > 1 && (
+              <span className="owner-tag" style={{ alignSelf: "flex-start" }}>
+                동일 URL 제보 {report.reportCount}건 통합됨
+              </span>
+            )}
+            {report.reason && <p className="body-muted" style={{ whiteSpace: "pre-line" }}>{report.reason}</p>}
             <p className="admin-date mono">{formatDate(report.createdAt)}</p>
 
             {report.analysisId && analysesById[report.analysisId] ? (

@@ -52,8 +52,9 @@ export default function ThreatIntelPage() {
                   <path d="M12 9v4m0 4h.01M10.3 3.86 1.8 18a1.5 1.5 0 0 0 1.3 2.25h17.8a1.5 1.5 0 0 0 1.3-2.25L13.7 3.86a1.5 1.5 0 0 0-2.6 0Z" />
                 </svg>
                 <span className="analyzed-url mono">{report.url}</span>
+                {report.reportCount > 1 && <span className="mismatch-badge">제보 {report.reportCount}건</span>}
               </div>
-              {report.reason && <p className="body-muted">{report.reason}</p>}
+              {report.reason && <p className="body-muted" style={{ whiteSpace: "pre-line" }}>{report.reason}</p>}
               <p className="admin-date mono">확정일 {formatDate(report.createdAt)}</p>
             </li>
           ))}

@@ -24,8 +24,9 @@ public class AnalysisController {
 
     @PostMapping
     public ResponseEntity<UrlAnalysis> analyze(@Valid @RequestBody AnalyzeRequest request) {
-        UrlAnalysis result = analysisService.analyze(request.getUrl());
-        return ResponseEntity.ok(result);
+        UrlAnalysis pending = analysisService.createPendingAnalysis(request.getUrl());
+        analysisService.runAnalysisAsync(pending.getId(), pending.getUrl());
+        return ResponseEntity.accepted().body(pending);
     }
 
     @GetMapping

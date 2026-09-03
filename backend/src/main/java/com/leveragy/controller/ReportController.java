@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import java.net.URI;
 import java.util.List;
 
 @RestController
@@ -20,14 +21,39 @@ public class ReportController {
         this.reportRepository = reportRepository;
     }
 
+    /**
+     * 동일 URL 제보 중복 통합: 같은 URL로 이미 접수된 제보가 있으면 새 행을
+     * 만드는 대신 그 행의 reportCount를 올리고 새 의견을 이어붙인다.
+     */
     @PostMapping
     public ResponseEntity<Report> createReport(@Valid @RequestBody ReportRequest request) {
-        Report report = new Report();
-        report.setUrl(request.getUrl());
-        report.setReason(request.getReason());
-        report.setAnalysisId(request.getAnalysisId());
-        Report saved = reportRepository.save(report);
-        return ResponseEntity.ok(saved);
+        String url = request.getUrl();
+        String reason = request.getReason();
+
+        Report report = reportRepository.findFirstByUrlOrderByCreatedAtDesc(url)
+                .map(existing -> {
+                    existing.setReportCount(existing.getReportCount() + 1);
+                    if (reason != null && !reason.isBlank()) {
+                        String merged = (existing.getReason() == null || existing.getReason().isBlank())
+                                ? reason
+                                : existing.getReason() + "\n" + reason;
+                        existing.setReason(merged);
+                    }
+                    if (existing.getAnalysisId() == null && request.getAnalysisId() != null) {
+                        existing.setAnalysisId(request.getAnalysisId());
+                    }
+                    return existing;
+                })
+                .orElseGet(() -> {
+                    Report created = new Report();
+                    created.setUrl(url);
+                    created.setReason(reason);
+                    created.setAnalysisId(request.getAnalysisId());
+                    created.setDomain(extractDomain(url));
+                    return created;
+                });
+
+        return ResponseEntity.ok(reportRepository.save(report));
     }
 
     @GetMapping
@@ -46,5 +72,14 @@ public class ReportController {
                     return ResponseEntity.ok(reportRepository.save(report));
                 })
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    private String extractDomain(String url) {
+        try {
+            String host = URI.create(url).getHost();
+            return host != null ? host : url;
+        } catch (Exception e) {
+            return url;
+        }
     }
 }

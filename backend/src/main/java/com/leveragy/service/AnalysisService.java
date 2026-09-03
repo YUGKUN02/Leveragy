@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.leveragy.entity.UrlAnalysis;
 import com.leveragy.repository.UrlAnalysisRepository;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.net.URI;
@@ -45,20 +46,47 @@ public class AnalysisService {
         this.objectMapper = objectMapper;
     }
 
-    public UrlAnalysis analyze(String url) {
-        int riskScore = computeMockRiskScore(url);
-        String finalResult = riskScore >= 70 ? "PHISHING" : riskScore >= 40 ? "SUSPICIOUS" : "NORMAL";
-
+    /**
+     * 비동기 분석 Job의 1단계: analysisId를 바로 내주기 위해 PROCESSING 행부터
+     * 만든다("Frontend는 하나의 HTTP 요청을 오래 기다리기보다 analysisId 기반
+     * 비동기 구조를 사용한다" - 보고서 5장). 실제 분석은 runAnalysisAsync가 이어서 한다.
+     */
+    public UrlAnalysis createPendingAnalysis(String url) {
         UrlAnalysis analysis = new UrlAnalysis();
         analysis.setUrl(url);
-        analysis.setRiskScore(riskScore);
-        analysis.setMlResult("{\"note\":\"placeholder - XGBoost 연동 예정\"}");
-        analysis.setMultimodalResult(buildMockPageAnalysis(url, riskScore, finalResult));
-        analysis.setXaiResult(buildMockXaiReasons(url, riskScore));
-        analysis.setFinalResult(finalResult);
-        analysis.setScreenshotData(captureScreenshot(url, finalResult));
-
+        analysis.setProcessingStatus("PROCESSING");
         return urlAnalysisRepository.save(analysis);
+    }
+
+    /**
+     * 비동기 분석 Job의 2단계. 실제 Sandbox·AI 연동 시 여기서 외부 API를 호출하게
+     * 되며 몇 초가 걸릴 수 있다 - 지금은 그 지연을 흉내내기 위해 짧게 sleep한다.
+     */
+    @Async
+    public void runAnalysisAsync(Long analysisId, String url) {
+        try {
+            Thread.sleep(1500);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+
+        urlAnalysisRepository.findById(analysisId).ifPresent(analysis -> {
+            try {
+                int riskScore = computeMockRiskScore(url);
+                String finalResult = riskScore >= 70 ? "PHISHING" : riskScore >= 40 ? "SUSPICIOUS" : "NORMAL";
+
+                analysis.setRiskScore(riskScore);
+                analysis.setMlResult("{\"note\":\"placeholder - XGBoost 연동 예정\"}");
+                analysis.setMultimodalResult(buildMockPageAnalysis(url, riskScore, finalResult));
+                analysis.setXaiResult(buildMockXaiReasons(url, riskScore));
+                analysis.setFinalResult(finalResult);
+                analysis.setScreenshotData(captureScreenshot(url, finalResult));
+                analysis.setProcessingStatus("COMPLETED");
+            } catch (Exception e) {
+                analysis.setProcessingStatus("FAILED");
+            }
+            urlAnalysisRepository.save(analysis);
+        });
     }
 
     private int computeMockRiskScore(String url) {

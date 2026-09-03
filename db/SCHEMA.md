@@ -19,6 +19,7 @@ MySQL 8.0, 테이블 2개(`url_analysis`, `reports`). 실제 DDL은 [schema.sql]
 | `xai_result` | TEXT (JSON 배열) | **1번 URL AI** | 1번 판정 근거 문자열 배열. 예: `["HTTPS 미사용", "금융기관 관련 키워드 포함"]` |
 | `multimodal_result` | TEXT (JSON) | **2번 Sandbox → 3번 페이지·행동 분석 AI** | 아래 "multimodal_result 구조" 참고. `NORMAL`이면 Sandbox 자체를 실행하지 않으므로 `{"note":"위험도가 낮아 Sandbox가 실행되지 않았습니다."}`만 들어있다 |
 | `screenshot_data` | LONGTEXT | **2번 Sandbox** | 분석 당시 페이지 캡처. `data:image/png;base64,...` 형태의 data URI. 아직 실제 캡처가 없어서 항상 `NULL` |
+| `processing_status` | VARCHAR(32) | 백엔드(Job 흐름) | `PROCESSING` → `COMPLETED`(또는 `FAILED`). 아래 "비동기 분석 Job 흐름" 참고 |
 | `created_at` | DATETIME | - | 생성 시각(analysis ID·분석 시간 표시에 사용) |
 
 ### `multimodal_result` JSON 구조 (2번·3번 계약)
@@ -69,6 +70,18 @@ MySQL 8.0, 테이블 2개(`url_analysis`, `reports`). 실제 DDL은 [schema.sql]
 - `domSummary` — 원래는 **2번 Sandbox**가 원시 수집하는 DOM 통계(입력 필드/Form/외부 링크 개수)다. 아직 Sandbox가 없어서 3번 AI 목업 안에 같이 끼워 넣었다. 실제 Sandbox가 붙으면 이 부분만 Sandbox의 원시 JSON을 그대로 옮겨 담으면 된다. 결과 화면의 "DOM 분석 결과" 카드가 여기서 나온다.
 - `pageRiskScore` / `verdict`는 참고용으로만 같이 넣었고, 실제 화면 표시는 `risk_score` / `final_result` 컬럼(1번 AI 결과)을 우선 사용한다.
 
+## 비동기 분석 Job 흐름 (보고서 5장)
+
+실제 Sandbox·AI 호출은 시간이 걸릴 수 있으므로, `POST /api/analyze`는 분석이 끝나기를 기다리지
+않고 `processing_status = PROCESSING`인 행을 즉시 만들어 `id`를 돌려준다(HTTP 202). 실제 분석은
+`AnalysisService.runAnalysisAsync()`가 `@Async`로 백그라운드에서 이어서 실행하고, 끝나면 같은 행에
+결과를 채우고 `processing_status = COMPLETED`(실패 시 `FAILED`)로 갱신한다.
+
+프론트엔드(`ResultPage.jsx`)는 `GET /api/analyze/{id}`를 1.2초 간격으로 폴링하다가
+`PROCESSING`이 아니게 되면 폴링을 멈추고 결과를 그린다 — 폴링 중에는 로딩 화면(`LoadingOverlay`)을
+그대로 재사용해서 보여준다. 지금은 실제 작업이 없어서 `Thread.sleep(1500)`으로 지연을 흉내내는데,
+실제 Sandbox·AI 호출로 교체해도 이 흐름 자체는 바뀌지 않는다.
+
 ## reports
 
 사용자 제보 1건 = 한 행. `POST /api/reports`에서 생성되고, `GET /api/reports`(옵션 `status` 필터),
@@ -80,10 +93,24 @@ MySQL 8.0, 테이블 2개(`url_analysis`, `reports`). 실제 DDL은 [schema.sql]
 | `url` | VARCHAR(2048) | 제보 대상 URL |
 | `reason` | TEXT | 사용자가 남긴 추가 의견(선택) |
 | `analysis_id` | BIGINT (nullable) | 이 제보가 어떤 `url_analysis` 행에서 나왔는지. 결과 화면에서 제보하면 채워지고, 오래된/외부 제보는 `NULL`일 수 있다. 관리자 페이지가 이 값으로 "분석 상세 보기" 링크를 만든다 |
+| `domain` | VARCHAR(255) | 제보 URL의 호스트(예: `example.com`). 새 행을 만들 때만 채워짐 |
+| `report_count` | INT (기본 1) | **동일 URL 제보 중복 통합**. 이미 같은 URL로 접수된 제보가 있으면 새 행을 만들지 않고 이 카운트만 올린다 |
 | `status` | VARCHAR(32) | `PENDING`(검토 대기, 기본값) / `CONFIRMED_PHISHING`(피싱 확정) / `FALSE_POSITIVE`(오탐) |
-| `created_at` | DATETIME | 접수 시각 |
+| `created_at` | DATETIME | 최초 접수 시각(중복 통합되어도 바뀌지 않음) |
 
 `CONFIRMED_PHISHING` 상태인 제보들이 Threat Intelligence 페이지(`GET /api/reports?status=CONFIRMED_PHISHING`)에 노출된다.
+
+### 중복 통합 동작 (`ReportController.createReport`)
+
+같은 `url`로 기존 제보가 있으면(`findFirstByUrlOrderByCreatedAtDesc`) 새 행을 만드는 대신:
+1. `report_count`를 1 올린다.
+2. 새로 들어온 의견(`reason`)이 있으면 기존 `reason`에 줄바꿈으로 이어붙인다(둘 다 보존).
+3. 기존 행에 `analysis_id`가 비어 있었으면 새로 들어온 값으로 채운다.
+
+즉 제보 번호(`REP-{id}`)와 접수 시각은 **최초 제보 기준으로 고정**되고, 이후 제보는 같은 행에
+누적된다. 도메인이 같고 경로만 다른 URL(예: `example.com/a` vs `example.com/b`)은 별도 행으로
+유지되며, `domain` 컬럼으로 필요하면 도메인 단위 조회만 가능하다 — 서로 다른 페이지를 하나로
+합쳐버리면 오히려 각 제보의 구체적인 정황을 잃게 되기 때문에 자동 통합은 URL이 정확히 같을 때만 한다.
 
 ## 실제 파이프라인 연동 시 바꿔야 하는 곳
 

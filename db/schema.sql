@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS url_analysis (
   xai_result TEXT,
   screenshot_data LONGTEXT,
   final_result VARCHAR(32),
+  processing_status VARCHAR(32) NOT NULL DEFAULT 'PROCESSING',
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -20,6 +21,8 @@ CREATE TABLE IF NOT EXISTS reports (
   url VARCHAR(2048) NOT NULL,
   reason TEXT,
   analysis_id BIGINT,
+  domain VARCHAR(255),
+  report_count INT NOT NULL DEFAULT 1,
   status VARCHAR(32) NOT NULL DEFAULT 'PENDING',
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
-import { getAnalysis, submitReport, listReports } from "../api/client.js";
+import { getAnalysis, submitReport } from "../api/client.js";
 
 const STEPS = ["정보 확인", "제출 중", "완료"];
 
@@ -26,7 +26,6 @@ export default function ReportPage() {
   const [stage, setStage] = useState("confirm"); // confirm | submitting | done
   const [note, setNote] = useState(location.state?.prefill || "");
   const [result, setResult] = useState(null);
-  const [duplicateCount, setDuplicateCount] = useState(null);
   const [submitError, setSubmitError] = useState("");
 
   useEffect(() => {
@@ -42,12 +41,6 @@ export default function ReportPage() {
     try {
       const saved = await submitReport(analysis.url, note.trim() || undefined, analysis.id);
       setResult(saved);
-      try {
-        const all = await listReports();
-        setDuplicateCount(all.filter((r) => r.url === analysis.url).length);
-      } catch {
-        setDuplicateCount(null);
-      }
       setStage("done");
     } catch {
       setSubmitError("제보 접수에 실패했습니다. 잠시 후 다시 시도해주세요.");
@@ -70,6 +63,17 @@ export default function ReportPage() {
           <div className="spinner" />
           <div className="loading-title">불러오는 중…</div>
         </div>
+      </div>
+    );
+  }
+
+  if (analysis.processingStatus === "PROCESSING") {
+    return (
+      <div className="page">
+        <p className="body-muted">아직 분석이 진행 중입니다. 분석이 끝난 뒤 제보해주세요.</p>
+        <Link to={`/result/${analysis.id}`} className="btn btn-ghost" style={{ marginTop: 10 }}>
+          분석 결과로 돌아가기
+        </Link>
       </div>
     );
   }
@@ -170,12 +174,8 @@ export default function ReportPage() {
                   {STATUS_LABEL[result.status] || result.status}
                 </span>
               </dd>
-              {duplicateCount != null && (
-                <>
-                  <dt>동일 URL 제보</dt>
-                  <dd>현재 총 {duplicateCount}건 (이번 제보 포함)</dd>
-                </>
-              )}
+              <dt>동일 URL 제보</dt>
+              <dd>현재 총 {result.reportCount}건 (이번 제보 포함)</dd>
             </dl>
             <button className="btn btn-primary btn-block" style={{ marginTop: 14 }} onClick={() => navigate("/")}>
               새로운 URL 분석하기

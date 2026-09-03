@@ -2,6 +2,9 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { getAnalysis } from "../api/client.js";
 import RiskGauge from "../components/RiskGauge.jsx";
+import LoadingOverlay from "../components/LoadingOverlay.jsx";
+
+const POLL_INTERVAL_MS = 1200;
 
 const VERDICT_META = {
   PHISHING: { label: "피싱 사이트로 의심됩니다", tone: "danger" },
@@ -17,15 +20,29 @@ export default function ResultPage() {
 
   useEffect(() => {
     let cancelled = false;
-    getAnalysis(id)
-      .then((data) => {
-        if (!cancelled) setAnalysis(data);
-      })
-      .catch(() => {
-        if (!cancelled) setError("분석 결과를 불러오지 못했습니다.");
-      });
+    let intervalId = null;
+
+    function fetchOnce() {
+      getAnalysis(id)
+        .then((data) => {
+          if (cancelled) return;
+          setAnalysis(data);
+          if (data.processingStatus !== "PROCESSING" && intervalId) {
+            clearInterval(intervalId);
+          }
+        })
+        .catch(() => {
+          if (!cancelled) setError("분석 결과를 불러오지 못했습니다.");
+          if (intervalId) clearInterval(intervalId);
+        });
+    }
+
+    fetchOnce();
+    intervalId = setInterval(fetchOnce, POLL_INTERVAL_MS);
+
     return () => {
       cancelled = true;
+      if (intervalId) clearInterval(intervalId);
     };
   }, [id]);
 
@@ -54,6 +71,22 @@ export default function ResultPage() {
           <div className="spinner" />
           <div className="loading-title">분석 결과를 불러오는 중입니다…</div>
         </div>
+      </div>
+    );
+  }
+
+  if (analysis.processingStatus === "PROCESSING") {
+    return (
+      <div className="page">
+        <LoadingOverlay active label="AI가 URL을 분석하고 있습니다…" />
+      </div>
+    );
+  }
+
+  if (analysis.processingStatus === "FAILED") {
+    return (
+      <div className="page">
+        <p className="error-text">분석 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.</p>
       </div>
     );
   }
