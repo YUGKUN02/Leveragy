@@ -5,14 +5,14 @@ const STEPS = ["정보 확인", "제출 중", "완료"];
 
 const STATUS_LABEL = {
   PENDING: "검토 대기",
-  CONFIRMED: "확인됨",
-  REJECTED: "반려됨",
+  CONFIRMED_PHISHING: "피싱 확정",
+  FALSE_POSITIVE: "오탐",
 };
 
 const STATUS_CLASS = {
   PENDING: "",
-  CONFIRMED: "status-confirmed",
-  REJECTED: "status-rejected",
+  CONFIRMED_PHISHING: "status-confirmed",
+  FALSE_POSITIVE: "status-rejected",
 };
 
 export default function ReportFlow({ url, verdict, riskScore, reasons }) {

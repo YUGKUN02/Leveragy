@@ -35,9 +35,45 @@ body {
 .app-header {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
   padding: 14px 24px;
   background: var(--surface);
   border-bottom: 1px solid var(--border);
+}
+
+.app-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+
+.app-nav a {
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.app-nav a:hover {
+  color: var(--primary-strong);
+}
+
+@media (max-width: 480px) {
+  .app-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .app-nav {
+    gap: 6px 14px;
+  }
+
+  .app-nav a {
+    font-size: 12px;
+  }
 }
 
 .brand {
@@ -689,6 +725,9 @@ dl.info dd {
 }
 
 .status-pill {
+  display: inline-block;
+  flex: none;
+  white-space: nowrap;
   font-size: 10.5px;
   font-weight: 600;
   padding: 2px 8px;
@@ -741,4 +780,191 @@ dl.info dd {
 .done-sub {
   font-size: 12px;
   color: var(--text-muted);
+}
+
+/* ---- list pages: history / admin / threat-intel / 404 ---- */
+.page-title {
+  font-family: "Sora", sans-serif;
+  font-weight: 700;
+  font-size: 22px;
+  margin: 0;
+}
+
+.subtitle {
+  color: var(--text-muted);
+  font-size: 13px;
+  margin: 6px 0 22px;
+}
+
+.empty-text {
+  color: var(--text-muted);
+  font-size: 13px;
+  padding: 20px 0;
+}
+
+.btn-outline {
+  background: var(--surface);
+  color: var(--primary-strong);
+  border: 1px solid var(--primary);
+}
+
+.error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+  padding: 40px 12px;
+  color: var(--text-muted);
+}
+
+.error-state-icon {
+  font-size: 24px;
+  color: var(--warning);
+}
+
+.history-list,
+.threat-intel-list,
+.admin-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.history-list li {
+  padding: 0;
+  transition: border-color 0.15s ease;
+}
+
+.history-list li:hover {
+  border-color: var(--primary);
+}
+
+.history-link {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  padding: 13px 15px;
+  text-decoration: none;
+  color: var(--text);
+}
+
+.history-main {
+  display: flex;
+  gap: 9px;
+  align-items: flex-start;
+  min-width: 0;
+}
+
+.history-main svg {
+  width: 15px;
+  height: 15px;
+  color: var(--text-muted);
+  flex: none;
+  margin-top: 2px;
+}
+
+.history-url {
+  font-size: 12.5px;
+  word-break: break-all;
+}
+
+.history-date {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 3px;
+}
+
+.history-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 5px;
+  flex: none;
+}
+
+.history-score {
+  font-family: "Sora", sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.admin-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.admin-filter-tabs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.admin-filter-tab {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-muted);
+  border-radius: 999px;
+  padding: 6px 13px;
+  font-size: 12.5px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.admin-filter-tab.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+  font-weight: 600;
+}
+
+.admin-search {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 12.5px;
+  min-width: 180px;
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.admin-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.admin-url {
+  font-size: 12.5px;
+  word-break: break-all;
+}
+
+.admin-date {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.threat-item-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.threat-item-header svg {
+  width: 16px;
+  height: 16px;
+  color: var(--danger);
+  flex: none;
+  margin-top: 2px;
 }
