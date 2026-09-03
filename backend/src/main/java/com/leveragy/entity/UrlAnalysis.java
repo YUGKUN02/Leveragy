@@ -29,6 +29,14 @@ public class UrlAnalysis {
     @Column(name = "xai_result")
     private String xaiResult;
 
+    /**
+     * Sandbox가 캡처한 분석 당시 화면. data URI(예: "data:image/png;base64,...")
+     * 형태로 저장하며, 아직 Sandbox 연동 전이라 null이면 프론트에서 예시 화면을 대신 보여준다.
+     */
+    @Lob
+    @Column(name = "screenshot_data")
+    private String screenshotData;
+
     @Column(name = "final_result", length = 32)
     private String finalResult;
 
@@ -57,6 +65,9 @@ public class UrlAnalysis {
 
     public String getXaiResult() { return xaiResult; }
     public void setXaiResult(String xaiResult) { this.xaiResult = xaiResult; }
+
+    public String getScreenshotData() { return screenshotData; }
+    public void setScreenshotData(String screenshotData) { this.screenshotData = screenshotData; }
 
     public String getFinalResult() { return finalResult; }
     public void setFinalResult(String finalResult) { this.finalResult = finalResult; }

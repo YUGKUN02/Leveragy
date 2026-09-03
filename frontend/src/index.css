@@ -736,6 +736,12 @@ ol.ai-reasons li::marker {
   margin-top: 2px;
 }
 
+.fp-screenshot {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
 .preview-caption {
   font-size: 9.5px;
   color: var(--text-muted);

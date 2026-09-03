@@ -56,6 +56,7 @@ public class AnalysisService {
         analysis.setMultimodalResult(buildMockPageAnalysis(url, riskScore, finalResult));
         analysis.setXaiResult(buildMockXaiReasons(url, riskScore));
         analysis.setFinalResult(finalResult);
+        analysis.setScreenshotData(captureScreenshot(url, finalResult));
 
         return urlAnalysisRepository.save(analysis);
     }
@@ -183,6 +184,16 @@ public class AnalysisService {
         } catch (JsonProcessingException e) {
             return "{\"note\":\"mock generation failed\"}";
         }
+    }
+
+    /**
+     * TODO: 2번 Sandbox가 붙으면 실제로 페이지를 렌더링해 캡처한 뒤
+     * "data:image/png;base64,..." 형태의 data URI를 반환하도록 교체한다.
+     * 지금은 진짜 스크린샷이 없으므로 null을 반환하고, 프론트는 null일 때
+     * 예시 화면을 대신 보여준다.
+     */
+    private String captureScreenshot(String url, String finalResult) {
+        return null;
     }
 
     private String extractDomain(String url) {

@@ -111,7 +111,12 @@ export default function ResultPage() {
           <h4>
             <span className="owner-tag">2번</span> 사이트 미리보기 (분석 당시 화면)
           </h4>
-          {pageAnalysis ? (
+          {analysis.screenshotData ? (
+            <div className="site-preview">
+              <img src={analysis.screenshotData} alt="분석 당시 페이지 스크린샷" className="fp-screenshot" />
+              <div className="preview-caption">* 분석 당시 페이지를 캡처한 이미지입니다.</div>
+            </div>
+          ) : pageAnalysis ? (
             <div className="site-preview">
               <div className="fp-bar">🏦 {pageAnalysis.impersonation?.brand || "로그인 페이지"}</div>
               <div className="fp-body">
