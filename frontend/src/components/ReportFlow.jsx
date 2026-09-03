@@ -15,7 +15,7 @@ const STATUS_CLASS = {
   FALSE_POSITIVE: "status-rejected",
 };
 
-export default function ReportFlow({ url, verdict, riskScore, reasons }) {
+export default function ReportFlow({ url, verdict, riskScore, reasons, analysisId }) {
   const [stage, setStage] = useState("closed"); // closed | confirm | submitting | done
   const [note, setNote] = useState("");
   const [result, setResult] = useState(null);
@@ -33,7 +33,7 @@ export default function ReportFlow({ url, verdict, riskScore, reasons }) {
     setStage("submitting");
     setError("");
     try {
-      const saved = await submitReport(url, note.trim() || undefined);
+      const saved = await submitReport(url, note.trim() || undefined, analysisId);
       setResult(saved);
       try {
         const all = await listReports();

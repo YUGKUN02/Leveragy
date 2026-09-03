@@ -16,8 +16,8 @@ export function listAnalyses() {
   return api.get("/analyze").then((res) => res.data);
 }
 
-export function submitReport(url, reason) {
-  return api.post("/reports", { url, reason }).then((res) => res.data);
+export function submitReport(url, reason, analysisId) {
+  return api.post("/reports", { url, reason, analysisId }).then((res) => res.data);
 }
 
 export function listReports(status) {

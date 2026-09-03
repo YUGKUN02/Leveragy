@@ -10,6 +10,15 @@ const VERDICT_META = {
   NORMAL: { label: "안전한 사이트로 보입니다", tone: "safe" },
 };
 
+const SIGNAL_LABEL = {
+  PASSWORD_FIELD: "비밀번호 입력 필드 발견",
+  OTP_FIELD: "OTP 입력 필드 발견",
+  POST_FORM: "정보 전송 가능 Form (POST)",
+  BRAND_IMPERSONATION: "브랜드 사칭 정황",
+  BRAND_DOMAIN_MISMATCH: "공식 도메인 불일치",
+  EXTERNAL_CONTACT: "외부 상담 채널 유도",
+};
+
 export default function ResultPage() {
   const { id } = useParams();
   const [analysis, setAnalysis] = useState(null);
@@ -60,6 +69,7 @@ export default function ResultPage() {
   }
 
   const reasons = safeParseReasons(analysis.xaiResult);
+  const pageAnalysis = safeParsePageAnalysis(analysis.multimodalResult);
   const verdict = analysis.finalResult || "NORMAL";
   const meta = VERDICT_META[verdict] || VERDICT_META.NORMAL;
   const riskScore = analysis.riskScore ?? 0;
@@ -123,19 +133,80 @@ export default function ResultPage() {
           title="사이트 미리보기"
           desc="Sandbox가 페이지를 안전하게 수집하면 분석 당시 화면이 여기에 표시됩니다."
         />
-        <PendingCard
-          owner="2번"
-          title="DOM 분석 결과"
-          desc="입력 필드·Form·외부 연결 정보가 Sandbox 연동 후 표시됩니다."
-        />
-        <PendingCard
-          owner="3번"
-          title="공식기관 비교 결과"
-          desc="접속 도메인과 공식 도메인 비교 결과가 페이지 분석 AI 연동 후 표시됩니다."
-        />
+
+        {pageAnalysis ? (
+          <div className="panel-card">
+            <h4>
+              <span className="owner-tag">3번</span> 공식기관 비교 결과
+            </h4>
+            {pageAnalysis.impersonation?.detected ? (
+              <>
+                <div className="domain-line">
+                  <span className="k">감지된 기관명</span>
+                  <span className="v">{pageAnalysis.impersonation.brand}</span>
+                </div>
+                <div className="domain-line">
+                  <span className="k">현재 도메인</span>
+                  <span className="v mono">{pageAnalysis.domainAnalysis?.currentDomain}</span>
+                </div>
+                <div className="domain-arrow">↓</div>
+                <div className="domain-line">
+                  <span className="k">공식 도메인</span>
+                  <span className="v mono">{(pageAnalysis.domainAnalysis?.officialDomains || []).join(", ") || "-"}</span>
+                  {pageAnalysis.domainAnalysis?.domainBrandMismatch && <span className="mismatch-badge">불일치</span>}
+                </div>
+                {pageAnalysis.domainAnalysis?.domainBrandMismatch && (
+                  <p className="domain-note">공식 도메인과 일치하지 않아 사칭 가능성이 매우 높습니다.</p>
+                )}
+              </>
+            ) : (
+              <p className="body-muted">기관 사칭 정황이 발견되지 않았습니다.</p>
+            )}
+          </div>
+        ) : (
+          <PendingCard
+            owner="3번"
+            title="공식기관 비교 결과"
+            desc="접속 도메인과 공식 도메인 비교 결과가 페이지 분석 AI 연동 후 표시됩니다."
+          />
+        )}
+
+        {pageAnalysis ? (
+          <div className="panel-card">
+            <h4>
+              <span className="owner-tag">3번</span> 탐지된 위험 신호
+            </h4>
+            {pageAnalysis.detectedSignals?.length ? (
+              <div className="signal-chip-list">
+                {pageAnalysis.detectedSignals.map((signal) => (
+                  <span key={signal} className="signal-chip">
+                    {SIGNAL_LABEL[signal] || signal}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <p className="body-muted">감지된 위험 신호가 없습니다.</p>
+            )}
+            {typeof pageAnalysis.confidence === "number" && (
+              <p className="body-muted">AI 신뢰도 {Math.round(pageAnalysis.confidence * 100)}%</p>
+            )}
+          </div>
+        ) : (
+          <PendingCard
+            owner="3번"
+            title="행동·자격증명 분석"
+            desc="Credential 요구, 외부 연락 유도 등 행동 신호가 페이지 분석 AI 연동 후 표시됩니다."
+          />
+        )}
       </div>
 
-      <ReportFlow url={analysis.url} verdict={verdict} riskScore={riskScore} reasons={reasons} />
+      <ReportFlow
+        url={analysis.url}
+        verdict={verdict}
+        riskScore={riskScore}
+        reasons={reasons}
+        analysisId={analysis.id}
+      />
     </div>
   );
 }
@@ -158,6 +229,15 @@ function safeParseReasons(xaiResult) {
     return Array.isArray(parsed) ? parsed : [];
   } catch {
     return [];
+  }
+}
+
+function safeParsePageAnalysis(multimodalResult) {
+  try {
+    const parsed = JSON.parse(multimodalResult);
+    return parsed && typeof parsed.pageRiskScore === "number" ? parsed : null;
+  } catch {
+    return null;
   }
 }
 

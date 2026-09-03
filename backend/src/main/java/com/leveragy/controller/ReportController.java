@@ -25,6 +25,7 @@ public class ReportController {
         Report report = new Report();
         report.setUrl(request.getUrl());
         report.setReason(request.getReason());
+        report.setAnalysisId(request.getAnalysisId());
         Report saved = reportRepository.save(report);
         return ResponseEntity.ok(saved);
     }

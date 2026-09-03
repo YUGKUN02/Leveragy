@@ -17,6 +17,9 @@ public class Report {
     @Lob
     private String reason;
 
+    @Column(name = "analysis_id")
+    private Long analysisId;
+
     @Column(length = 32)
     private String status;
 
@@ -39,6 +42,9 @@ public class Report {
 
     public String getReason() { return reason; }
     public void setReason(String reason) { this.reason = reason; }
+
+    public Long getAnalysisId() { return analysisId; }
+    public void setAnalysisId(Long analysisId) { this.analysisId = analysisId; }
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }

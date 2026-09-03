@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { listReports, updateReportStatus } from "../api/client.js";
+import { Link } from "react-router-dom";
+import { listReports, updateReportStatus, listAnalyses } from "../api/client.js";
 import ErrorState from "../components/ErrorState.jsx";
+
+const VERDICT_TONE = { PHISHING: "danger", SUSPICIOUS: "warning", NORMAL: "safe" };
 
 const STATUS_LABEL = {
   PENDING: "검토 대기",
@@ -17,6 +20,7 @@ const FILTER_TABS = [
 
 export default function AdminPage() {
   const [reports, setReports] = useState(null);
+  const [analysesById, setAnalysesById] = useState({});
   const [loadError, setLoadError] = useState("");
   const [updateError, setUpdateError] = useState("");
   const [updatingId, setUpdatingId] = useState(null);
@@ -25,8 +29,11 @@ export default function AdminPage() {
 
   const load = useCallback(() => {
     setLoadError("");
-    listReports()
-      .then(setReports)
+    Promise.all([listReports(), listAnalyses().catch(() => [])])
+      .then(([reportList, analysisList]) => {
+        setReports(reportList);
+        setAnalysesById(Object.fromEntries(analysisList.map((a) => [a.id, a])));
+      })
       .catch(() => setLoadError("제보 목록을 불러오지 못했습니다."));
   }, []);
 
@@ -121,6 +128,22 @@ export default function AdminPage() {
             </div>
             {report.reason && <p className="body-muted">{report.reason}</p>}
             <p className="admin-date mono">{formatDate(report.createdAt)}</p>
+
+            {report.analysisId && analysesById[report.analysisId] ? (
+              <div className="admin-analysis-preview">
+                <span className={"verdict-badge tone-" + (VERDICT_TONE[analysesById[report.analysisId].finalResult] || "safe")}>
+                  {analysesById[report.analysisId].finalResult}
+                </span>
+                <span className="history-score">{analysesById[report.analysisId].riskScore}/100</span>
+                <Link to={`/result/${report.analysisId}`} target="_blank" rel="noopener noreferrer" className="link-btn">
+                  분석 상세 보기 ↗
+                </Link>
+              </div>
+            ) : report.analysisId ? (
+              <p className="body-muted">연결된 분석을 찾을 수 없습니다 (ID {report.analysisId}).</p>
+            ) : (
+              <p className="body-muted">연결된 분석 이력이 없는 제보입니다.</p>
+            )}
 
             <div className="action-row">
               <button
