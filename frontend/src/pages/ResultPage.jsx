@@ -151,14 +151,14 @@ export default function ResultPage() {
             </div>
           ) : pageAnalysis ? (
             <div className="site-preview">
-              <div className="fp-bar">🏦 {pageAnalysis.impersonation?.brand || "로그인 페이지"}</div>
+              <div className="fp-bar">🏦 {pageAnalysis.impersonatedBrand || "로그인 페이지"}</div>
               <div className="fp-body">
                 <div className="fp-title">로그인</div>
                 <div className="fp-field">아이디를 입력하세요</div>
-                {pageAnalysis.credentialIntent?.types?.includes("PASSWORD") && (
+                {pageAnalysis.credentialTypes?.includes("PASSWORD") && (
                   <div className="fp-field">비밀번호를 입력하세요</div>
                 )}
-                {pageAnalysis.credentialIntent?.types?.includes("OTP") && (
+                {pageAnalysis.credentialTypes?.includes("OTP") && (
                   <div className="fp-field">OTP 인증번호를 입력하세요</div>
                 )}
                 <div className="fp-btn">로그인</div>
@@ -249,23 +249,23 @@ export default function ResultPage() {
           <h4>
             <span className="owner-tag">3번</span> 공식기관 비교 결과
           </h4>
-          {pageAnalysis?.impersonation?.detected ? (
+          {pageAnalysis?.impersonatedBrand ? (
             <>
               <div className="domain-line">
                 <span className="k">감지된 기관명</span>
-                <span className="v">{pageAnalysis.impersonation.brand}</span>
+                <span className="v">{pageAnalysis.impersonatedBrand}</span>
               </div>
               <div className="domain-line">
                 <span className="k">현재 도메인</span>
-                <span className="v mono">{pageAnalysis.domainAnalysis?.currentDomain}</span>
+                <span className="v mono">{pageAnalysis.currentDomain}</span>
               </div>
               <div className="domain-arrow">↓</div>
               <div className="domain-line">
                 <span className="k">공식 도메인</span>
-                <span className="v mono">{(pageAnalysis.domainAnalysis?.officialDomains || []).join(", ") || "-"}</span>
-                {pageAnalysis.domainAnalysis?.domainBrandMismatch && <span className="mismatch-badge">불일치</span>}
+                <span className="v mono">{pageAnalysis.officialDomain || "-"}</span>
+                {pageAnalysis.domainBrandMismatch && <span className="mismatch-badge">불일치</span>}
               </div>
-              {pageAnalysis.domainAnalysis?.domainBrandMismatch && (
+              {pageAnalysis.domainBrandMismatch && (
                 <p className="domain-note">공식 도메인과 일치하지 않아 사칭 가능성이 매우 높습니다.</p>
               )}
             </>
@@ -338,9 +338,9 @@ function RiskIcon({ type }) {
 function buildRiskSummary(pageAnalysis) {
   if (!pageAnalysis) return [];
   const items = [];
-  const brand = pageAnalysis.impersonation?.brand;
+  const brand = pageAnalysis.impersonatedBrand;
 
-  if (pageAnalysis.domainAnalysis?.domainBrandMismatch) {
+  if (pageAnalysis.domainBrandMismatch) {
     items.push({
       icon: "domain",
       title: "비공식 도메인 사용",
@@ -348,16 +348,16 @@ function buildRiskSummary(pageAnalysis) {
       severity: "danger",
     });
   }
-  if (pageAnalysis.credentialIntent?.types?.includes("PASSWORD")) {
+  if (pageAnalysis.credentialTypes?.includes("PASSWORD")) {
     items.push({ icon: "lock", title: "비밀번호 입력 요구", desc: "사용자 비밀번호 입력 필드 발견", severity: "danger" });
   }
-  if (pageAnalysis.credentialIntent?.types?.includes("OTP")) {
+  if (pageAnalysis.credentialTypes?.includes("OTP")) {
     items.push({ icon: "lock", title: "OTP 입력 요구", desc: "일회용 인증번호 입력 필드 발견", severity: "danger" });
   }
   if (pageAnalysis.detectedSignals?.includes("POST_FORM")) {
     items.push({ icon: "form", title: "정보 전송 가능 Form", desc: "POST 방식으로 정보 전송 가능", severity: "danger" });
   }
-  if (pageAnalysis.behaviorAnalysis?.externalContactRequest) {
+  if (pageAnalysis.detectedSignals?.includes("EXTERNAL_CONTACT")) {
     items.push({ icon: "link", title: "외부 링크·상담 유도", desc: "외부 상담 채널로 연결되는 링크 발견", severity: "warning" });
   }
   return items;
