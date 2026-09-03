@@ -15,3 +15,7 @@ export function getAnalysis(id) {
 export function submitReport(url, reason) {
   return api.post("/reports", { url, reason }).then((res) => res.data);
 }
+
+export function listReports() {
+  return api.get("/reports").then((res) => res.data);
+}
