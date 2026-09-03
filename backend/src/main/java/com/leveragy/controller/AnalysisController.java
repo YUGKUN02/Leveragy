@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/analyze")
@@ -23,8 +24,14 @@ public class AnalysisController {
 
     @PostMapping
     public ResponseEntity<UrlAnalysis> analyze(@Valid @RequestBody AnalyzeRequest request) {
-        UrlAnalysis result = analysisService.analyze(request.getUrl());
-        return ResponseEntity.ok(result);
+        UrlAnalysis pending = analysisService.createPendingAnalysis(request.getUrl());
+        analysisService.runAnalysisAsync(pending.getId(), pending.getUrl());
+        return ResponseEntity.accepted().body(pending);
+    }
+
+    @GetMapping
+    public ResponseEntity<List<UrlAnalysis>> listAnalyses() {
+        return ResponseEntity.ok(urlAnalysisRepository.findAllByOrderByCreatedAtDesc());
     }
 
     @GetMapping("/{id}")
