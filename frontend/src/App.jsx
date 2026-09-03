@@ -1,6 +1,7 @@
 import { Routes, Route, Link } from "react-router-dom";
 import UrlInputPage from "./pages/UrlInputPage.jsx";
 import ResultPage from "./pages/ResultPage.jsx";
+import ReportPage from "./pages/ReportPage.jsx";
 import HistoryPage from "./pages/HistoryPage.jsx";
 import ThreatIntelPage from "./pages/ThreatIntelPage.jsx";
 import AdminPage from "./pages/AdminPage.jsx";
@@ -27,6 +28,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<UrlInputPage />} />
           <Route path="/result/:id" element={<ResultPage />} />
+          <Route path="/report/:id" element={<ReportPage />} />
           <Route path="/history" element={<HistoryPage />} />
           <Route path="/threat-intel" element={<ThreatIntelPage />} />
           <Route path="/admin" element={<AdminPage />} />

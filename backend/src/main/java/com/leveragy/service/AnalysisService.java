@@ -154,6 +154,18 @@ public class AnalysisService {
         behaviorAnalysis.put("externalContactRequest", externalContact);
         behaviorAnalysis.put("downloadRequest", false);
 
+        // Sandbox가 아직 없어 원시 DOM 수집 결과도 함께 목업으로 채운다 (실제로는 2번 Sandbox JSON에서 옴).
+        boolean hasForm = wantsPassword || wantsOtp;
+        Map<String, Object> domSummary = new LinkedHashMap<>();
+        domSummary.put("passwordFields", wantsPassword ? 1 : 0);
+        domSummary.put("otpFields", wantsOtp ? 1 : 0);
+        domSummary.put("textFields", 2);
+        domSummary.put("formCount", hasForm ? 1 : 0);
+        domSummary.put("formMethod", hasForm ? "POST" : null);
+        domSummary.put("formAction", hasForm ? extractPath(url) : null);
+        domSummary.put("externalDomainLinks", domainMismatch ? 2 : 0);
+        domSummary.put("externalContactLinks", externalContact ? 1 : 0);
+
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("pageRiskScore", riskScore);
         result.put("verdict", finalResult);
@@ -161,6 +173,7 @@ public class AnalysisService {
         result.put("credentialIntent", credentialIntent);
         result.put("domainAnalysis", domainAnalysis);
         result.put("behaviorAnalysis", behaviorAnalysis);
+        result.put("domSummary", domSummary);
         result.put("detectedSignals", signals);
         result.put("reasons", reasons);
         result.put("confidence", Math.round(Math.min(0.6 + riskScore / 250.0, 0.97) * 100) / 100.0);
@@ -178,6 +191,15 @@ public class AnalysisService {
             return host != null ? host : url;
         } catch (Exception e) {
             return url;
+        }
+    }
+
+    private String extractPath(String url) {
+        try {
+            String path = URI.create(url).getPath();
+            return (path == null || path.isBlank()) ? "/" : path;
+        } catch (Exception e) {
+            return "/";
         }
     }
 
