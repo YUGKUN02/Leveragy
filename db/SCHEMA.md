@@ -24,32 +24,23 @@ MySQL 8.0, 테이블 2개(`url_analysis`, `reports`). 실제 DDL은 [schema.sql]
 
 ### `multimodal_result` JSON 구조 (2번·3번 계약)
 
-`FinDer_Sandbox_페이지행동AI_연동구조.md` 문서의 3번 AI 출력 계약과 같은 모양이다.
-`AnalysisService.buildMockPageAnalysis()`가 지금은 URL 문자열만 보고 이 모양을 목업으로 채운다.
+팀 보고서(워드 문서) 7장 "권장 핵심 JSON 필드" 중 "페이지 분석 AI → Backend" 계약과 같은
+필드명·모양이다. `AnalysisService.buildMockPageAnalysis()`가 지금은 URL 문자열만 보고 이 모양을
+목업으로 채운다. (이전에는 `.md` 문서 기준의 더 상세한 중첩 구조를 썼는데, 보고서 7장 필드명에
+맞춰 평탄화했다 — 옛 구조는 [CONTRACT_HISTORY.md](CONTRACT_HISTORY.md)에 남겨뒀다.)
 
 ```json
 {
   "pageRiskScore": 70,
-  "verdict": "PHISHING",
-  "impersonation": {
-    "detected": true,
-    "brand": "KB국민은행",
-    "category": "BANK"
-  },
-  "credentialIntent": {
-    "detected": true,
-    "types": ["PASSWORD", "OTP"]
-  },
-  "domainAnalysis": {
-    "currentDomain": "example.com",
-    "officialDomains": ["kbstar.com"],
-    "domainBrandMismatch": true
-  },
-  "behaviorAnalysis": {
-    "financialActionRequest": false,
-    "externalContactRequest": false,
-    "downloadRequest": false
-  },
+  "impersonatedBrand": "KB국민은행",
+  "credentialIntent": true,
+  "domainBrandMismatch": true,
+  "reasons": ["KB국민은행을(를) 사칭하는 정황이 발견되었습니다.", "..."],
+
+  "currentDomain": "example.com",
+  "officialDomain": "kbstar.com",
+  "credentialTypes": ["PASSWORD", "OTP"],
+  "detectedSignals": ["PASSWORD_FIELD", "OTP_FIELD", "POST_FORM", "BRAND_IMPERSONATION", "BRAND_DOMAIN_MISMATCH"],
   "domSummary": {
     "passwordFields": 1,
     "otpFields": 1,
@@ -59,16 +50,23 @@ MySQL 8.0, 테이블 2개(`url_analysis`, `reports`). 실제 DDL은 [schema.sql]
     "formAction": "/verify",
     "externalDomainLinks": 2,
     "externalContactLinks": 0
-  },
-  "detectedSignals": ["PASSWORD_FIELD", "OTP_FIELD", "POST_FORM", "BRAND_IMPERSONATION", "BRAND_DOMAIN_MISMATCH"],
-  "reasons": ["KB국민은행을(를) 사칭하는 정황이 발견되었습니다.", "..."],
-  "confidence": 0.88
+  }
 }
 ```
 
-- `impersonation` / `credentialIntent` / `domainAnalysis` / `behaviorAnalysis` / `detectedSignals` / `reasons` / `confidence` — 문서에 정의된 **3번 페이지·행동 분석 AI**의 실제 출력 필드. 결과 화면의 "주요 위험 요약", "공식기관 비교 결과", "AI 분석 근거" 카드가 여기서 나온다.
-- `domSummary` — 원래는 **2번 Sandbox**가 원시 수집하는 DOM 통계(입력 필드/Form/외부 링크 개수)다. 아직 Sandbox가 없어서 3번 AI 목업 안에 같이 끼워 넣었다. 실제 Sandbox가 붙으면 이 부분만 Sandbox의 원시 JSON을 그대로 옮겨 담으면 된다. 결과 화면의 "DOM 분석 결과" 카드가 여기서 나온다.
-- `pageRiskScore` / `verdict`는 참고용으로만 같이 넣었고, 실제 화면 표시는 `risk_score` / `final_result` 컬럼(1번 AI 결과)을 우선 사용한다.
+**계약 필드 (보고서 7장과 이름·타입이 정확히 같음)** — 실제 3번 AI가 붙을 때 반드시 이 5개는
+이 이름·모양 그대로 와야 한다.
+
+- `pageRiskScore` (number) · `impersonatedBrand` (string 또는 null) · `credentialIntent` (boolean)
+  · `domainBrandMismatch` (boolean) · `reasons` (string 배열)
+
+**계약 밖 보조 필드** — 결과 화면의 "DOM 분석 결과"·"공식기관 비교 결과" 카드에 필요해서 같이
+넣어둔 것들. 7장 계약에는 없으므로 3번 AI가 안 줘도 그만이고, 없으면 해당 화면 요소만 빠진다.
+
+- `currentDomain` / `officialDomain` — 공식기관 비교 결과 카드의 도메인 표시용
+- `credentialTypes` — `["PASSWORD", "OTP"]`처럼 어떤 민감정보를 요구하는지(사이트 미리보기·주요 위험 요약에 사용)
+- `detectedSignals` — 위험 신호 코드 목록(주요 위험 요약 카드에 사용)
+- `domSummary` — 원래 **2번 Sandbox**가 원시 수집하는 DOM 통계(입력 필드/Form/외부 링크 개수). 아직 Sandbox가 없어서 여기 같이 끼워 넣었고, 실제 Sandbox가 붙으면 그 원시 JSON을 그대로 옮겨 담으면 된다("DOM 분석 결과" 카드용)
 
 ## 비동기 분석 Job 흐름 (보고서 5장)
 

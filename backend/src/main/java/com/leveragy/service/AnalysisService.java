@@ -164,25 +164,6 @@ public class AnalysisService {
         }
         reasons.add("AI 파이프라인 연동 전 임시 결과입니다.");
 
-        Map<String, Object> impersonation = new LinkedHashMap<>();
-        impersonation.put("detected", matchedBrand != null);
-        impersonation.put("brand", matchedBrand != null ? matchedBrand.brand : null);
-        impersonation.put("category", matchedBrand != null ? matchedBrand.category : null);
-
-        Map<String, Object> credentialIntent = new LinkedHashMap<>();
-        credentialIntent.put("detected", !credentialTypes.isEmpty());
-        credentialIntent.put("types", credentialTypes);
-
-        Map<String, Object> domainAnalysis = new LinkedHashMap<>();
-        domainAnalysis.put("currentDomain", currentDomain);
-        domainAnalysis.put("officialDomains", matchedBrand != null ? List.of(matchedBrand.officialDomain) : List.of());
-        domainAnalysis.put("domainBrandMismatch", domainMismatch);
-
-        Map<String, Object> behaviorAnalysis = new LinkedHashMap<>();
-        behaviorAnalysis.put("financialActionRequest", false);
-        behaviorAnalysis.put("externalContactRequest", externalContact);
-        behaviorAnalysis.put("downloadRequest", false);
-
         // Sandbox가 아직 없어 원시 DOM 수집 결과도 함께 목업으로 채운다 (실제로는 2번 Sandbox JSON에서 옴).
         boolean hasForm = wantsPassword || wantsOtp;
         Map<String, Object> domSummary = new LinkedHashMap<>();
@@ -195,17 +176,20 @@ public class AnalysisService {
         domSummary.put("externalDomainLinks", domainMismatch ? 2 : 0);
         domSummary.put("externalContactLinks", externalContact ? 1 : 0);
 
+        // 팀 보고서 7장 "권장 핵심 JSON 필드"(페이지 분석 AI → Backend) 계약과 같은 필드명·모양.
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("pageRiskScore", riskScore);
-        result.put("verdict", finalResult);
-        result.put("impersonation", impersonation);
-        result.put("credentialIntent", credentialIntent);
-        result.put("domainAnalysis", domainAnalysis);
-        result.put("behaviorAnalysis", behaviorAnalysis);
-        result.put("domSummary", domSummary);
-        result.put("detectedSignals", signals);
+        result.put("impersonatedBrand", matchedBrand != null ? matchedBrand.brand : null);
+        result.put("credentialIntent", !credentialTypes.isEmpty());
+        result.put("domainBrandMismatch", domainMismatch);
         result.put("reasons", reasons);
-        result.put("confidence", Math.round(Math.min(0.6 + riskScore / 250.0, 0.97) * 100) / 100.0);
+
+        // 계약 밖 보조 필드 - 화면의 DOM 분석·공식기관 비교 카드를 채우는 데 쓴다.
+        result.put("currentDomain", currentDomain);
+        result.put("officialDomain", matchedBrand != null ? matchedBrand.officialDomain : null);
+        result.put("credentialTypes", credentialTypes);
+        result.put("detectedSignals", signals);
+        result.put("domSummary", domSummary);
 
         try {
             return objectMapper.writeValueAsString(result);
