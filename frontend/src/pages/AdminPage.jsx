@@ -1,6 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { listReports, updateReportStatus, listAnalyses } from "../api/client.js";
+import {
+  listReports,
+  updateReportStatus,
+  listAnalyses,
+  adminLogin,
+  adminLogout,
+  getAdminToken,
+  clearAdminToken,
+} from "../api/client.js";
 import ErrorState from "../components/ErrorState.jsx";
 
 const VERDICT_TONE = { PHISHING: "danger", SUSPICIOUS: "warning", NORMAL: "safe" };
@@ -19,6 +27,69 @@ const FILTER_TABS = [
 ];
 
 export default function AdminPage() {
+  const [token, setToken] = useState(getAdminToken());
+
+  if (!token) {
+    return <AdminLoginForm onLoggedIn={() => setToken(getAdminToken())} />;
+  }
+
+  return <AdminDashboard onSessionExpired={() => setToken(null)} />;
+}
+
+function AdminLoginForm({ onLoggedIn }) {
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setSubmitting(true);
+    setError("");
+    try {
+      await adminLogin(username.trim(), password);
+      onLoggedIn();
+    } catch {
+      setError("아이디 또는 비밀번호가 올바르지 않습니다.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <div className="page">
+      <div className="narrow">
+        <p className="headline">관리자 로그인</p>
+        <p className="sub">제보 관리자 Dashboard는 로그인 후 이용할 수 있습니다.</p>
+
+        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <input
+            type="text"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            placeholder="아이디"
+            className="url-field"
+            autoComplete="username"
+          />
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="비밀번호"
+            className="url-field"
+            autoComplete="current-password"
+          />
+          {error && <p className="error-text">{error}</p>}
+          <button type="submit" className="btn btn-primary btn-block" disabled={submitting}>
+            {submitting ? "확인 중…" : "로그인"}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function AdminDashboard({ onSessionExpired }) {
   const [reports, setReports] = useState(null);
   const [analysesById, setAnalysesById] = useState({});
   const [loadError, setLoadError] = useState("");
@@ -34,8 +105,15 @@ export default function AdminPage() {
         setReports(reportList);
         setAnalysesById(Object.fromEntries(analysisList.map((a) => [a.id, a])));
       })
-      .catch(() => setLoadError("제보 목록을 불러오지 못했습니다."));
-  }, []);
+      .catch((err) => {
+        if (err?.response?.status === 401) {
+          clearAdminToken();
+          onSessionExpired();
+          return;
+        }
+        setLoadError("제보 목록을 불러오지 못했습니다.");
+      });
+  }, [onSessionExpired]);
 
   useEffect(() => {
     load();
@@ -47,11 +125,21 @@ export default function AdminPage() {
     try {
       const updated = await updateReportStatus(id, status);
       setReports((prev) => prev.map((r) => (r.id === id ? updated : r)));
-    } catch {
+    } catch (err) {
+      if (err?.response?.status === 401) {
+        clearAdminToken();
+        onSessionExpired();
+        return;
+      }
       setUpdateError("상태 변경에 실패했습니다. 잠시 후 다시 시도해주세요.");
     } finally {
       setUpdatingId(null);
     }
+  }
+
+  async function handleLogout() {
+    await adminLogout();
+    onSessionExpired();
   }
 
   const filteredReports = useMemo(() => {
@@ -85,8 +173,17 @@ export default function AdminPage() {
 
   return (
     <div className="page">
-      <h1 className="page-title">제보 관리자 Dashboard</h1>
-      <p className="subtitle">사용자 제보를 확인하고 피싱 여부를 확정합니다.</p>
+      <div className="result-header">
+        <div>
+          <h1 className="page-title">제보 관리자 Dashboard</h1>
+          <p className="subtitle" style={{ marginBottom: 0 }}>
+            사용자 제보를 확인하고 피싱 여부를 확정합니다.
+          </p>
+        </div>
+        <button className="btn btn-ghost btn-small" onClick={handleLogout}>
+          로그아웃
+        </button>
+      </div>
 
       <div className="admin-toolbar">
         <div className="admin-filter-tabs">
